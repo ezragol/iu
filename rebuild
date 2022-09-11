@@ -1,0 +1,14 @@
+#!/bin/sh
+
+EXEC_NAME=untitled
+
+aclocal
+automake --add-missing
+autoconf
+mkdir -p build
+cd build
+../configure
+make
+sudo make install
+valgrind --tool=memcbeck $EXEC_NAME
+cd ..
