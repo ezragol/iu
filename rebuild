@@ -1,14 +1,15 @@
 #!/bin/sh
 
+BUILD_DIR=build
 EXEC_NAME=untitled
 
 aclocal
 automake --add-missing
 autoconf
-mkdir -p build
-cd build
+mkdir -p $BUILD_DIR
+cd $BUILD_DIR
 ../configure
 make
 sudo make install
-valgrind --tool=memcbeck $EXEC_NAME
+valgrind --tool=memcheck $EXEC_NAME
 cd ..
