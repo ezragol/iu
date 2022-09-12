@@ -2,7 +2,7 @@
 
 BUILD_DIR=build
 UPLOAD_DIR=uploads
-EXEC_NAME=untitled
+EXEC_NAME=iu
 
 aclocal
 automake --add-missing

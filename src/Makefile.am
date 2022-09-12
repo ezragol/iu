@@ -1,2 +1,2 @@
-bin_PROGRAMS = untitled
-untitled_SOURCES = main.c socket/socket.c socket/fs.c
+bin_PROGRAMS = iu
+iu_SOURCES = main.c socket/upload.c socket/fs.c
