@@ -11,5 +11,5 @@ cd $BUILD_DIR
 ../configure
 make
 sudo make install
-valgrind --tool=memcheck $EXEC_NAME
+valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes $EXEC_NAME
 cd ..

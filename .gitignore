@@ -30,3 +30,7 @@ Makefile.in
 # make
 Makefile
 build
+
+# testing
+/uploads
+/.vscode
