@@ -9,10 +9,9 @@ int main(int argc, char **argv)
                   AF_UNSPEC, SOCK_STREAM, AI_PASSIVE);
 
     int new_fd, sockfd;
-    int addr_size = sizeof client_addr, upload_status;
-    char client_ip[INET6_ADDRSTRLEN];
-    char client_buf[MAX_UPLOAD];
-    char upload_path[MAX_PATH_LEN];
+    int addr_size = sizeof client_addr, upload_status, response_status;
+    char response_body[MAX_BODY];
+    char client_ip[INET6_ADDRSTRLEN], client_buf[MAX_UPLOAD], upload_path[MAX_PATH_LEN], response[MAX_HEADERS + MAX_BODY];
 
     resolve_path("../uploads/test.jpg", upload_path);
     if ((sockfd = create_socket(4011, &sockinfo)) == -1)
@@ -30,7 +29,15 @@ int main(int argc, char **argv)
         if (!fork())
         {
             close(sockfd);
-            upload_status = upload_file(upload_path, new_fd, client_buf);
+
+            if (upload_status = upload_file(upload_path, new_fd, client_buf))
+                exit(1);
+
+            sprintf(response_body, "Uploaded attached file to \"%s\"\n", upload_path);
+            create_response(response, response_body);
+            if ((response_status = send_response(new_fd, response)) == -1)
+                exit(1);
+
             close(new_fd);
             printf("> closing connection with %s\n", client_ip);
             exit(upload_status);

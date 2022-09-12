@@ -121,6 +121,16 @@ int read_header(char *headers, char **value, char *key)
     return 1;
 }
 
+// attach headers to response
+int create_response(char *response, char *body)
+{
+    int length = strlen(body);
+    snprintf(response, MAX_HEADERS + MAX_BODY, "%s%d%s\r\n\r\n%s",
+             "HTTP/1.1 200 OK\nContent-Length: ", length, "\nContent-Type: text/plain; charset=utf-8", body);
+
+    return 0;
+}
+
 // get ready to listen on a socket with, and rework the child processes that will handle its requests
 int create_socket(int port, struct addrinfo *details)
 {
@@ -248,5 +258,17 @@ int upload_file(char *location, int client_fd, char *client_buf)
 
     printf("> uploaded file to %s\n", location);
     fclose(fr);
+    return 0;
+}
+
+// send a response to the client socket file descriptor
+int send_response(int client_fd, char *content)
+{
+    int length = strlen(content), bytes;
+
+    if ((bytes = send(client_fd, content, length, 0)) == -1)
+        return -1;
+
+    printf("> sending response\n");
     return 0;
 }

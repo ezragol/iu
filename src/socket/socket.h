@@ -14,6 +14,7 @@
 #define BACKLOG 2
 #define MAX_UPLOAD 4194304
 #define MAX_HEADERS 1024
+#define MAX_BODY 4096
 #define HEADERS_END "\r\n\r\n"
 
 void sigchld_handler(int sig);
@@ -24,8 +25,10 @@ int detail_socket(struct addrinfo *details, int size, int ai_family, int ai_sock
 
 int cut_headers(char *buf, char **headers, char **content, int buf_size);
 int read_header(char *headers, char **value, char *key);
+int create_response(char *response, char *content);
 
 int create_socket(int port_int, struct addrinfo *details);
 int establish_connection(int sockfd, struct sockaddr_storage client_addr, int size, char *client_ip);
+int send_response(int client_fd, char *content);
 
 int upload_file(char *location, int client_fd, char *client_buf);
