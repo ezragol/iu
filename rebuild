@@ -11,5 +11,9 @@ cd $BUILD_DIR
 ../configure
 make
 sudo make install
-valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes $EXEC_NAME
+if [ $1 = 'valgrind' ] then
+    valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes $EXEC_NAME
+else
+    $EXEC_NAME
+fi
 cd ..
