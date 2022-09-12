@@ -222,6 +222,11 @@ int establish_connection(int sockfd, struct sockaddr_storage client_addr, int si
 int upload_file(char *location, int client_fd, char *client_buf)
 {
     FILE *fr = fopen(location, "w+");
+    if (errno != 0)
+    {
+        perror("> while opening file");
+        return 1;
+    }
     char *headers = NULL, *image_binary = NULL, *content_length_str;
     int client_size = 0, content_length = MAX_UPLOAD, recieve_size, status = 0;
     while (client_size < content_length && (recieve_size = read(client_fd, client_buf, sizeof(char) * MAX_UPLOAD)) > 0)
@@ -235,9 +240,9 @@ int upload_file(char *location, int client_fd, char *client_buf)
         if (image_binary != NULL)
         {
             fwrite(image_binary, sizeof(char), recieve_size, fr);
-            if (ferror(fr))
+            if (errno != 0)
             {
-                perror("> while copying uploaded file");
+                perror("> while writing to file");
                 return 1;
             }
         }
