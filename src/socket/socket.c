@@ -186,7 +186,7 @@ int create_socket(int port, struct addrinfo *details)
         return -1;
     }
 
-    printf("> listening for connections on localhost:%d\n", port);
+    printf("\n> listening for connections on localhost:%d\n", port);
     return sockfd;
 }
 
@@ -203,7 +203,7 @@ int establish_connection(int sockfd, struct sockaddr_storage client_addr, int si
 
     inet_ntop(client_addr.ss_family,
               read_client_ip((struct sockaddr *)&client_addr), client_ip, ip_size);
-    printf("> established connection with %s\n", client_ip);
+    printf("\n> established connection with %s\n", client_ip);
     return new_fd;
 }
 

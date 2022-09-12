@@ -32,9 +32,9 @@ int main(int argc, char **argv)
             close(sockfd);
             upload_status = upload_file(upload_path, new_fd, client_buf);
             close(new_fd);
+            printf("> closing connection with %s\n", client_ip);
             exit(upload_status);
         }
-        printf("> closing connection with %s\n", client_ip);
         close(new_fd);
     }
 
