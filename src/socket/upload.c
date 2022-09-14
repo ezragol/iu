@@ -52,7 +52,7 @@ int cut_headers(char *buf, char **headers, char **content, int buf_size)
 
     while (strcmp(next_set, HEADERS_END) != 0 && index < MAX_HEADERS)
     {
-        memcpy(next_set, buf + index, 4);
+        strncpy(next_set, buf + index, 4);
         index++;
     }
 
@@ -73,13 +73,12 @@ int cut_headers(char *buf, char **headers, char **content, int buf_size)
 // messy
 int read_header(char *headers, char **value, char *key)
 {
-    char delimiter = ':', newline = '\n';
     int index = 0, length = strlen(headers), keylen = strlen(key);
     int *nl_locations = calloc(1, sizeof(int)), last, nl_length = 0;
 
     for (int i = 0; i < length; i++)
     {
-        if (headers[i] == newline)
+        if (headers[i] == NEWLINE)
         {
             int temp[nl_length];
             nl_length++;
@@ -95,7 +94,6 @@ int read_header(char *headers, char **value, char *key)
     }
 
     last = nl_locations[0];
-
     for (int i = 1; i < nl_length; i++)
     {
         for (int j = last; j < nl_locations[i]; j++)
@@ -108,7 +106,7 @@ int read_header(char *headers, char **value, char *key)
                 {
                     int valuelen = nl_locations[i] - j - t;
                     *value = calloc(valuelen, sizeof(char));
-                    memcpy(*value, headers + j + t + 3, valuelen - 3);
+                    strncpy(*value, headers + j + t + 3, valuelen - 3);
                     free(nl_locations);
                     return 0;
                 }
@@ -221,6 +219,8 @@ int establish_connection(int sockfd, struct sockaddr_storage client_addr, int si
 // little messy
 int upload_file(char *location, int client_fd, char *client_buf)
 {
+
+    printf("%s\n", location);
     FILE *fr = fopen(location, "w+");
     if (errno != 0)
     {

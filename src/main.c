@@ -1,19 +1,39 @@
 #include "socket/upload.h"
 #include "socket/fs.h"
+#include "options/args.h"
 
 int main(int argc, char **argv)
 {
+    int size = calc_argument_size(argv, argc);
+
     struct addrinfo sockinfo;
     struct sockaddr_storage client_addr;
-    detail_socket(&sockinfo, sizeof sockinfo,
-                  AF_UNSPEC, SOCK_STREAM, AI_PASSIVE);
+    argument *objects[size];
+    arglist args = {objects, 0};
 
     int new_fd, sockfd;
     int addr_size = sizeof client_addr, upload_status, response_status;
-    char response_body[MAX_BODY];
-    char client_ip[INET6_ADDRSTRLEN], client_buf[MAX_UPLOAD], upload_path[MAX_PATH_LEN], response[MAX_HEADERS + MAX_BODY];
 
-    resolve_path("../uploads/test.jpg", upload_path);
+    char response_body[MAX_BODY];
+    char client_ip[INET6_ADDRSTRLEN], client_buf[MAX_UPLOAD], response[MAX_HEADERS + MAX_BODY];
+    char upload_path[MAX_PATH_LEN];
+
+    parse_arguments(argv, argc, &args);
+    if ((get_argument_value(&args, "upload-path", upload_path) &&
+        get_argument_value(&args, "u", upload_path)) ||
+        strcmp(upload_path, "TRUE") == 0)
+    {
+        char *cwd = getcwd(NULL, 0);
+        snprintf(upload_path, MAX_PATH_LEN, "%s/uploads", cwd);
+        free(cwd);
+    }
+
+    printf("%s\n", upload_path);
+
+    free_arguments(&args, 0);
+    detail_socket(&sockinfo, sizeof sockinfo,
+                  AF_UNSPEC, SOCK_STREAM, AI_PASSIVE);
+
     if ((sockfd = create_socket(4011, &sockinfo)) == -1)
         return 1;
 
@@ -22,7 +42,7 @@ int main(int argc, char **argv)
         if ((new_fd = establish_connection(
                  sockfd, client_addr, addr_size, client_ip)) == -1)
         {
-            perror("> while establishing connection");
+            fprintf(stderr, "> error while establishing connection");
             continue;
         }
 

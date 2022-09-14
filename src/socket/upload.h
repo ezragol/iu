@@ -15,7 +15,9 @@
 #define MAX_UPLOAD 4194304
 #define MAX_HEADERS 1024
 #define MAX_BODY 4096
+
 #define HEADERS_END "\r\n\r\n"
+#define NEWLINE '\n'
 
 void sigchld_handler(int sig);
 void *read_client_ip(struct sockaddr *sock_addr);
