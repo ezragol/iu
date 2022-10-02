@@ -1,10 +1,9 @@
-#include "fs.h"
+#include "path.h"
 
 int resolve_path(char *path, char *full_path)
 {
-    int addition_len = strlen(path);
     if (path[0] == '/' && path[1] != '.')
-        strncpy(full_path, path, addition_len);
+        strcpy(full_path, path);
     else
     {
         char *cwd = getcwd(NULL, 0);

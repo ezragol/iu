@@ -40,18 +40,30 @@ int parse_arguments(char **argv, int argc, arglist *args)
     return 0;
 }
 
-int get_argument_value(arglist *args, char *key, char *value)
+int get_argument_value(arglist args, char *key, char *value)
 {
-    for (int i = 0; i < args->size; i++)
+    for (int i = 0; i < args.size; i++)
     {
-        argument *arg = args->objects[i];
-        if (strcmp(arg->key, key) == 0)
+        argument *arg = args.objects[i];
+        if (arg->key[0] == key[0])
         {
             strcpy(value, arg->value);
             return 0;
         }
     }
     return 1;
+}
+
+int bind_option(arglist args, char *key, char *value, int allow_true)
+{
+    if (get_argument_value(args, key, value) &&
+            get_argument_value(args, &key[0], value) ||
+        !strcmp(value, "TRUE") && !allow_true)
+    {
+        strncpy(value, "\0", 1);
+        return 1;
+    };
+    return 0;
 }
 
 int free_argument(argument *arg, int dyn)

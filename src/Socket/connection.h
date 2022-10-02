@@ -1,3 +1,6 @@
+#ifndef __SOCKET__CONNECTION_H_
+#define __SOCKET__CONNECTION_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,12 +15,7 @@
 #include <arpa/inet.h>
 
 #define BACKLOG 2
-#define MAX_UPLOAD 4194304
-#define MAX_HEADERS 1024
 #define MAX_BODY 4096
-
-#define HEADERS_END "\r\n\r\n"
-#define NEWLINE '\n'
 
 void sigchld_handler(int sig);
 void *read_client_ip(struct sockaddr *sock_addr);
@@ -25,12 +23,10 @@ void *read_client_ip(struct sockaddr *sock_addr);
 int translate_port(char *port_str, int port);
 int detail_socket(struct addrinfo *details, int size, int ai_family, int ai_socktype, int ai_flags);
 
-int cut_headers(char *buf, char **headers, char **content, int buf_size);
-int read_header(char *headers, char **value, char *key);
 int create_response(char *response, char *content);
 
 int create_socket(int port_int, struct addrinfo *details);
 int establish_connection(int sockfd, struct sockaddr_storage client_addr, int size, char *client_ip);
 int send_response(int client_fd, char *content);
 
-int upload_file(char *location, int client_fd, char *client_buf);
+#endif

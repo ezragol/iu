@@ -1,6 +1,7 @@
-#include "socket/upload.h"
-#include "socket/fs.h"
-#include "options/args.h"
+#include "FileSystem/path.h"
+#include "Options/args.h"
+#include "Socket/connection.h"
+#include "Actions/upload.h"
 
 int main(int argc, char **argv)
 {
@@ -11,24 +12,16 @@ int main(int argc, char **argv)
     argument *objects[size];
     arglist args = {objects, 0};
 
+    char upload_path[MAX_PATH_LEN];
+
     int new_fd, sockfd;
     int addr_size = sizeof client_addr, upload_status, response_status;
 
     char response_body[MAX_BODY];
     char client_ip[INET6_ADDRSTRLEN], client_buf[MAX_UPLOAD], response[MAX_HEADERS + MAX_BODY];
-    char upload_path[MAX_PATH_LEN];
 
     parse_arguments(argv, argc, &args);
-    if ((get_argument_value(&args, "upload-path", upload_path) &&
-        get_argument_value(&args, "u", upload_path)) ||
-        strcmp(upload_path, "TRUE") == 0)
-    {
-        char *cwd = getcwd(NULL, 0);
-        snprintf(upload_path, MAX_PATH_LEN, "%s/uploads", cwd);
-        free(cwd);
-    }
-
-    printf("%s\n", upload_path);
+    bind_option(args, "upload-path", upload_path, 1);
 
     free_arguments(&args, 0);
     detail_socket(&sockinfo, sizeof sockinfo,

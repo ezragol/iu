@@ -1,4 +1,4 @@
-#include "upload.h"
+#include "connection.h"
 
 // https://beej.us/guide/bgnet/html/#a-simple-stream-server
 
@@ -40,90 +40,11 @@ int detail_socket(struct addrinfo *details, int size, int ai_family, int ai_sock
     return 0;
 }
 
-// strip headers from the given request buffer
-int cut_headers(char *buf, char **headers, char **content, int buf_size)
-{
-    char next_set[4] = "    ";
-    int index = 0;
-    if (buf_size < 4)
-    {
-        return 1;
-    }
-
-    while (strcmp(next_set, HEADERS_END) != 0 && index < MAX_HEADERS)
-    {
-        strncpy(next_set, buf + index, 4);
-        index++;
-    }
-
-    if (index != 0 && index < MAX_HEADERS)
-    {
-        *headers = calloc(index + 1, sizeof(char));
-        memcpy(*headers, buf, index);
-    }
-    else
-    {
-        *content = calloc(buf_size + 1, sizeof(char));
-        memcpy(*content, buf, buf_size);
-    }
-    return 0;
-}
-
-// read the header with the given name (key)
-// messy
-int read_header(char *headers, char **value, char *key)
-{
-    int index = 0, length = strlen(headers), keylen = strlen(key);
-    int *nl_locations = calloc(1, sizeof(int)), last, nl_length = 0;
-
-    for (int i = 0; i < length; i++)
-    {
-        if (headers[i] == NEWLINE)
-        {
-            int temp[nl_length];
-            nl_length++;
-            if (nl_length > 1)
-            {
-                memcpy(temp, nl_locations, nl_length);
-                free(nl_locations);
-                nl_locations = calloc(nl_length, sizeof(int));
-                memcpy(nl_locations, temp, nl_length);
-            }
-            nl_locations[nl_length - 1] = i + 1;
-        }
-    }
-
-    last = nl_locations[0];
-    for (int i = 1; i < nl_length; i++)
-    {
-        for (int j = last; j < nl_locations[i]; j++)
-        {
-            for (int t = 0; t < keylen; t++)
-            {
-                if (headers[j + t] != key[t])
-                    break;
-                if (t == keylen - 1)
-                {
-                    int valuelen = nl_locations[i] - j - t;
-                    *value = calloc(valuelen, sizeof(char));
-                    strncpy(*value, headers + j + t + 3, valuelen - 3);
-                    free(nl_locations);
-                    return 0;
-                }
-            }
-            last = nl_locations[i];
-        }
-    }
-
-    free(nl_locations);
-    return 1;
-}
-
 // attach headers to response
 int create_response(char *response, char *body)
 {
     int length = strlen(body);
-    snprintf(response, MAX_HEADERS + MAX_BODY, "%s%d%s\r\n\r\n%s",
+    snprintf(response, MAX_BODY, "%s%d%s\r\n\r\n%s",
              "HTTP/1.1 200 OK\nContent-Length: ", length, "\nContent-Type: text/plain; charset=utf-8", body);
 
     return 0;
@@ -194,7 +115,7 @@ int create_socket(int port, struct addrinfo *details)
         return -1;
     }
 
-    printf("\n> listening for connections on localhost:%d\n", port);
+    printf("> listening for connections on localhost:%d\n", port);
     return sockfd;
 }
 
@@ -213,57 +134,6 @@ int establish_connection(int sockfd, struct sockaddr_storage client_addr, int si
               read_client_ip((struct sockaddr *)&client_addr), client_ip, ip_size);
     printf("\n> established connection with %s\n", client_ip);
     return new_fd;
-}
-
-// remove the headers from the request buffer and put the remaining content into the given file location
-// little messy
-int upload_file(char *location, int client_fd, char *client_buf)
-{
-
-    printf("%s\n", location);
-    FILE *fr = fopen(location, "w+");
-    if (errno != 0)
-    {
-        perror("> while opening file");
-        return 1;
-    }
-    char *headers = NULL, *image_binary = NULL, *content_length_str;
-    int client_size = 0, content_length = MAX_UPLOAD, recieve_size, status = 0;
-    while (client_size < content_length && (recieve_size = read(client_fd, client_buf, sizeof(char) * MAX_UPLOAD)) > 0)
-    {
-        printf("> server recieved %d bytes\n", recieve_size);
-        if (cut_headers(client_buf, &headers, &image_binary, recieve_size) == 1)
-        {
-            fprintf(stderr, "> error while separating file content from HTTP Request");
-            return 1;
-        }
-        if (image_binary != NULL)
-        {
-            fwrite(image_binary, sizeof(char), recieve_size, fr);
-            if (errno != 0)
-            {
-                perror("> while writing to file");
-                return 1;
-            }
-        }
-
-        if (image_binary != NULL)
-        {
-            free(image_binary);
-            client_size += recieve_size;
-        }
-        else if (headers != NULL)
-        {
-            read_header(headers, &content_length_str, "Content-Length");
-            content_length = atoi(content_length_str);
-            free(headers);
-            free(content_length_str);
-        }
-    }
-
-    printf("> uploaded file to %s\n", location);
-    fclose(fr);
-    return 0;
 }
 
 // send a response to the client socket file descriptor
