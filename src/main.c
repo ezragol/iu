@@ -18,6 +18,7 @@ int main(int argc, char **argv)
     int addr_size = sizeof client_addr, upload_status, response_status;
 
     char response_body[MAX_BODY];
+    char response_headers[MAX_HEADERS];
     char client_ip[INET6_ADDRSTRLEN], client_buf[MAX_UPLOAD], response[MAX_HEADERS + MAX_BODY];
 
     parse_arguments(argv, argc, &args);
@@ -47,7 +48,7 @@ int main(int argc, char **argv)
                 exit(1);
 
             sprintf(response_body, "Uploaded attached file to \"%s\"\n", upload_path);
-            create_response(response, response_body);
+            create_response(response, response_headers, response_body);
             if ((response_status = send_response(new_fd, response)) == -1)
                 exit(1);
 

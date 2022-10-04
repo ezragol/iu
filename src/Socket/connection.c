@@ -41,11 +41,13 @@ int detail_socket(struct addrinfo *details, int size, int ai_family, int ai_sock
 }
 
 // attach headers to response
-int create_response(char *response, char *body)
+int create_response(char *response, char *headers, char *body)
 {
-    int length = strlen(body);
-    snprintf(response, MAX_BODY, "%s%d%s\r\n\r\n%s",
-             "HTTP/1.1 200 OK\nContent-Length: ", length, "\nContent-Type: text/plain; charset=utf-8", body);
+    int length = strlen(body) - 1;
+    response_header("Server", "localhost", headers);
+    time_header(headers);
+    snprintf(response, MAX_BODY, "HTTP/1.1 200 OK\nContent-Length: %d\n%s%s\r\n\r\n%s",
+             length, "Content-Type: text/plain; charset=utf-8", headers, body);
 
     return 0;
 }

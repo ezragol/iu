@@ -14,6 +14,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "headers.h"
+
 #define BACKLOG 2
 #define MAX_BODY 4096
 
@@ -23,7 +25,7 @@ void *read_client_ip(struct sockaddr *sock_addr);
 int translate_port(char *port_str, int port);
 int detail_socket(struct addrinfo *details, int size, int ai_family, int ai_socktype, int ai_flags);
 
-int create_response(char *response, char *content);
+int create_response(char *response, char *headers, char *content);
 
 int create_socket(int port_int, struct addrinfo *details);
 int establish_connection(int sockfd, struct sockaddr_storage client_addr, int size, char *client_ip);

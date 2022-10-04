@@ -25,6 +25,13 @@ int upload_file(char *location, int client_fd, char *client_buf)
             fprintf(stderr, "> error while separating file content from HTTP Request");
             return 1;
         }
+
+        char path[MAX_REQUEST_PATH];
+        char method[6];
+        read_request_method(headers, method);
+        read_request_path(headers, path);
+        printf("%s :: %s\n", method, path);
+
         if (request_type)
         {
             fwrite(image_binary, sizeof(char), recieve_size, fr);
