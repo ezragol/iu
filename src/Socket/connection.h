@@ -19,6 +19,11 @@
 #define BACKLOG 2
 #define MAX_BODY 4096
 
+typedef struct s_requestinfo {
+    char path[MAX_REQUEST_PATH];
+    char method[6];
+} requestinfo;
+
 void sigchld_handler(int sig);
 void *read_client_ip(struct sockaddr *sock_addr);
 

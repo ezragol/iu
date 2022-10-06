@@ -17,8 +17,7 @@ int main(int argc, char **argv)
     int new_fd, sockfd;
     int addr_size = sizeof client_addr, upload_status, response_status;
 
-    char response_body[MAX_BODY];
-    char response_headers[MAX_HEADERS];
+    char response_body[MAX_BODY], response_headers[MAX_HEADERS] = {0};
     char client_ip[INET6_ADDRSTRLEN], client_buf[MAX_UPLOAD], response[MAX_HEADERS + MAX_BODY];
 
     parse_arguments(argv, argc, &args);

@@ -1,24 +1,53 @@
 #include "headers.h"
 
 // strip headers from the given request buffer
-int cut_headers(char *buf, char *headers, char **content, int buf_size)
+int cut_headers(char *buf, headerarray *headers, char **content, int buf_size)
 {
     char next_set[4] = "    ";
-    int index = 0;
+    int header_size = 0, last, nl_locations[MAX_HEADER_COUNT], dl_locations[MAX_HEADER_COUNT] = {0};
+
     if (buf_size < 4)
     {
         return -1;
     }
 
-    while (strcmp(next_set, HEADERS_END) != 0 && index < MAX_HEADERS)
+    while (strcmp(next_set, HEADERS_END) != 0 && header_size < MAX_HEADERS)
     {
-        strncpy(next_set, buf + index, 4);
-        index++;
+        strncpy(next_set, buf + header_size, 4);
+        header_size++;
     }
 
-    if (index != 0 && index < MAX_HEADERS)
+    if (header_size != 0 && header_size < MAX_HEADERS)
     {
-        memcpy(headers, buf, index);
+        for (int i = 0; i < header_size; i++)
+        {
+            if (buf[i] == NEWLINE)
+                nl_locations[headers->size++] = i + 1;
+            else if (buf[i] == DELIMITER && headers->size >= 1 && dl_locations[headers->size - 1] == 0)
+                dl_locations[headers->size - 1] = i;
+        }
+
+        last = nl_locations[0];
+        headers->content = calloc(headers->size, sizeof(header));
+
+        for (int i = 0; i < headers->size; i++)
+        {
+            int valuel, keylen = dl_locations[i] - nl_locations[i];
+            header *h_ptr = &headers->content[i];
+
+            if (i < headers->size - 1)
+                valuel = nl_locations[i + 1] - dl_locations[i] - 4;
+            else
+                valuel = header_size - dl_locations[i] - 3;
+
+            h_ptr->key = calloc(keylen + 1, sizeof(char));
+            h_ptr->value = calloc(valuel + 1, sizeof(char));
+
+            strncpy(h_ptr->key, buf + last, keylen);
+            strncpy(h_ptr->value, buf + last + keylen + 2, valuel);
+            last = nl_locations[i + 1];
+        }
+
         return 0;
     }
     else
@@ -31,75 +60,30 @@ int cut_headers(char *buf, char *headers, char **content, int buf_size)
 
 // read the header with the given name (key)
 // messy
-int read_header(char *headers, char *value, char *key)
+int read_header(headerarray *headers, char *value, char *key)
 {
-    int index = 0, length = strlen(headers), keylen = strlen(key);
-    int nl_locations[MAX_HEADERS / MAX_HEADER_SIZE] = {0}, last, nl_length = 0;
-
-    for (int i = 0; i < length; i++)
+    for (int i = 0; i < headers->size; i++)
     {
-        if (headers[i] == NEWLINE)
+        header h_ptr = headers->content[i];
+        if (strcmp(h_ptr.key, key) == 0)
         {
-            nl_locations[++nl_length] = i + 1;
+            strcpy(value, h_ptr.value);
+            return 1;
         }
     }
-
-    int start = 0;
-    char method[6];
-    char path[MAX_REQUEST_PATH];
-
-    while (headers[start] != ' ' && start < nl_locations[1])
-    {
-        method[start] = headers[start];
-        start++;
-    }
-
-    if (key == "method")
-    {
-        strcpy(value, method);
-        return 0;
-    }
-    else if (key == "path")
-    {
-        for (int i = ++start; headers[i] != ' ' && i < nl_locations[1]; i++)
-        {
-            path[i - start] = headers[i];
-        }
-        strcpy(value, path);
-        return 0;
-    }
-
-    last = nl_locations[0];
-
-    for (int i = 1; i < nl_length; i++)
-    {
-        for (int j = last; j < nl_locations[i]; j++)
-        {
-            for (int t = 0; t < keylen; t++)
-            {
-                if (headers[j + t] != key[t])
-                    break;
-                if (t == keylen - 1)
-                {
-                    int valuelen = nl_locations[i] - j - t;
-                    strncpy(value, headers + j + t + 3, valuelen - 3);
-                    return 0;
-                }
-            }
-            last = nl_locations[i];
-        }
-    }
-    return 1;
+    return 0;
 }
 
-int read_request_path(char *headers, char *path)
+int free_headers(headerarray headers)
 {
-    read_header(headers, path, "path");
-}
-
-int read_request_method(char *headers, char *method)
-{
-    read_header(headers, method, "method");
+    for (int i = 0; i < headers.size; i++)
+    {
+        header h_ptr = headers.content[i];
+        free(h_ptr.key);
+        free(h_ptr.value);
+    }
+    free(headers.content);
+    return 0;
 }
 
 int response_header(char *key, char *value, char *headers)
