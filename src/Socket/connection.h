@@ -13,11 +13,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <math.h>
 
 #include "headers.h"
 
 #define BACKLOG 2
-#define MAX_BODY 4096
 
 typedef struct s_requestinfo {
     char path[MAX_REQUEST_PATH];
@@ -27,13 +27,13 @@ typedef struct s_requestinfo {
 void sigchld_handler(int sig);
 void *read_client_ip(struct sockaddr *sock_addr);
 
-int translate_port(char *port_str, int port);
 int detail_socket(struct addrinfo *details, int size, int ai_family, int ai_socktype, int ai_flags);
 
-int create_response(char *response, char *headers, char *content);
-
-int create_socket(int port_int, struct addrinfo *details);
-int establish_connection(int sockfd, struct sockaddr_storage client_addr, int size, char *client_ip);
+int process_connection(int client_fd, int (*action)(hashmap, char **, hashmap), hashmap params);
+int create_response(char **response, char *headers, char *body, int status, char *message);
 int send_response(int client_fd, char *content);
+
+int create_socket(char port[5], struct addrinfo *details);
+int establish_connection(int sockfd, struct sockaddr_storage client_addr, int size, char *client_ip);
 
 #endif

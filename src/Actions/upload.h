@@ -4,6 +4,6 @@
 #include "../Socket/connection.h"
 #include "../Socket/headers.h"
 
-int upload_file(char *location, int client_fd, char *client_buf);
+int upload_file(hashmap headers, char **response_body, hashmap params);
 
 #endif

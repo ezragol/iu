@@ -5,29 +5,31 @@
 
 int main(int argc, char **argv)
 {
-    int size = calc_argument_size(argv, argc);
 
     struct addrinfo sockinfo;
     struct sockaddr_storage client_addr;
+    int size = calc_argument_size(argv, argc),
+        new_fd, sockfd, addr_size = sizeof client_addr;
+
     argument *objects[size];
     arglist args = {objects, 0};
 
-    char upload_path[MAX_PATH_LEN];
-
-    int new_fd, sockfd;
-    int addr_size = sizeof client_addr, upload_status, response_status;
-
-    char response_body[MAX_BODY], response_headers[MAX_HEADERS] = {0};
-    char client_ip[INET6_ADDRSTRLEN], client_buf[MAX_UPLOAD], response[MAX_HEADERS + MAX_BODY];
+    char upload_path[MAX_PATH_LEN], client_ip[INET6_ADDRSTRLEN], port[5];
 
     parse_arguments(argv, argc, &args);
-    bind_option(args, "upload-path", upload_path, 1);
-
+    if (bind_option(args, "upload-path", upload_path, 0))
+    {
+        fprintf(stderr, ">> Please specify an upload path for the server!\n");
+        return 1;
+    }
+    if (bind_option(args, "port", port, 0))
+        strcpy(port, "4011");
+    
     free_arguments(&args, 0);
     detail_socket(&sockinfo, sizeof sockinfo,
                   AF_UNSPEC, SOCK_STREAM, AI_PASSIVE);
 
-    if ((sockfd = create_socket(4011, &sockinfo)) == -1)
+    if ((sockfd = create_socket(port, &sockinfo)) == -1)
         return 1;
 
     while (1)
@@ -35,25 +37,23 @@ int main(int argc, char **argv)
         if ((new_fd = establish_connection(
                  sockfd, client_addr, addr_size, client_ip)) == -1)
         {
-            fprintf(stderr, "> error while establishing connection");
+            fprintf(stderr, " >> error while establishing connection");
             continue;
         }
 
         if (!fork())
         {
             close(sockfd);
+            hashmap params = {.size = 0};
+            add_item("upload_path", upload_path, &params);
 
-            if (upload_status = upload_file(upload_path, new_fd, client_buf))
-                exit(1);
-
-            sprintf(response_body, "Uploaded attached file to \"%s\"\n", upload_path);
-            create_response(response, response_headers, response_body);
-            if ((response_status = send_response(new_fd, response)) == -1)
-                exit(1);
-
+            int status = process_connection(new_fd, &upload_file, params);
+            printf(" >> closing connection with %s <<\n\n", client_ip);
             close(new_fd);
-            printf("> closing connection with %s\n", client_ip);
-            exit(upload_status);
+
+            if (status == -1)
+                exit(1);
+            exit(0);
         }
         close(new_fd);
     }
