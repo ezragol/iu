@@ -30,23 +30,6 @@ int detail_socket(struct addrinfo *details, int size, int ai_family, int ai_sock
     return 0;
 }
 
-// attach headers to response
-int create_response(char **response, char *headers, char *body, int status, char *message)
-{
-    int b_len = strlen(body) + 1;
-
-    add_header("Server", "localhost", headers);
-    sprintf(headers, "%s\nContent-Length: %d", headers, b_len);
-    add_header("Content-Type", "text/plain; charset=utf-8", headers);
-    time_header(headers);
-
-    int h_len = strlen(headers), m_len = strlen(message);
-    *response = calloc(b_len + h_len + m_len + 17, sizeof(char));
-    sprintf(*response, "HTTP/1.1 %d %s%s\r\n\r\n%s", status, message, headers, body);
-
-    return 0;
-}
-
 // get ready to listen on a socket with, and rework the child processes that will handle its requests
 int create_socket(char port[5], struct addrinfo *details)
 {
@@ -129,14 +112,14 @@ int establish_connection(int sockfd, struct sockaddr_storage client_addr, int si
     return new_fd;
 }
 
-int process_connection(int client_fd, hashmap params)
+int process_connection(int client_fd, hashmap *params)
 {
     hashmap request_headers = {.size = 2};
+    hashmap response_headers = {.size = 0};
     hash *client_body;
 
-    char content_length_str[MAX_HEADER_SIZE] = {0}, h_buf[MAX_UPLOAD] = {0},
-         response_headers[MAX_HEADER_SIZE * MAX_HEADER_COUNT] = {0};
-
+    char content_length_str[MAX_HEADER_SIZE] = {0};
+    char h_buf[MAX_UPLOAD] = {0};
     char *response, *response_body;
     int recieved = 0, current_recv = 1, status = 0, content_length = 0, got_headers = 0, finished = 0;
     int callback_status, response_status;
@@ -147,23 +130,21 @@ int process_connection(int client_fd, hashmap params)
         {
             got_headers = 1;
             int header_length = read(client_fd, h_buf, MAX_UPLOAD);
-            if (header_length == 0 || parse_headers(h_buf, &request_headers, header_length) == -1)
+            if (header_length == 0 || parse_request_headers(h_buf, &request_headers, header_length) == -1)
             {
                 fprintf(stderr, "   >> error while reading request headers\n");
                 return -1;
             }
 
-            hash *method = get_item("method", request_headers);
-            hash *path = get_item("path", request_headers);
+            char *method = get_item_value("request_method", &request_headers);
+            char *path = get_item_value("request_path", &request_headers);
 
-            add_item("client_method", method->value, &params);
-            add_item("client_path", path->value, &params);
-            printf("  >> %s %s (%dB) << \n", method->value, path->value, header_length);
+            printf("  >> %s %s (%dB) << \n", method, path, header_length);
 
-            if (read_item("Content-Length", content_length_str, request_headers))
+            if (read_item("Content-Length", content_length_str, &request_headers))
             {
-                add_item("client_body", NULL, &params);
-                client_body = get_item("client_body", params);
+                add_item("body", NULL, params);
+                client_body = get_item("body", params);
                 content_length = atoi(content_length_str);
                 client_body->value = malloc(content_length * sizeof(char));
             }
@@ -182,18 +163,40 @@ int process_connection(int client_fd, hashmap params)
         printf("   >> total bytes recieved: %dB %s<< \n", recieved, finished ? "(final) " : "");
     }
 
-    response_body = decide_outcome(request_headers, params);
+    response_body = decide_outcome(&request_headers, &response_headers, params);
 
-    create_response(&response, response_headers, response_body, 200, "OK");
+    create_response(&response, &response_headers, response_body);
     if ((response_status = send_response(client_fd, response)) == -1)
         return -1;
 
-    free_hashmap(request_headers);
+    free_hashmap(&request_headers);
+    free_hashmap(&response_headers);
     free_hashmap(params);
     free(response);
     free(response_body);
 
     return 0;
+}
+
+// attach headers to response
+int create_response(char **response, hashmap *response_headers, char *body)
+{
+    char *status = get_item_value("response_status", response_headers);
+    int b_len = strlen(body) + 1, length = (int) floor(log10(b_len)) + 2, complete;
+    char b_len_str[length];
+    snprintf(b_len_str, length, "%d", b_len);
+
+    add_item("Server", "localhost", response_headers);
+    add_item("Content-Length", b_len_str, response_headers);
+    time_header(response_headers);
+
+    int h_len = calc_hashmap_size(response_headers, 1), m_len = strlen(status);
+    *response = calloc(b_len + h_len + m_len + 9, sizeof(char));
+    if ((complete = destruct_response_headers(response_headers, *response)) == 1)
+        strcpy(*response, "500 INTERNAL SERVER ERROR");
+    else
+        strncat(*response, body, b_len);
+    return complete;
 }
 
 // send a response to the client socket file descriptor

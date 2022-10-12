@@ -15,7 +15,7 @@
 #include <arpa/inet.h>
 #include <math.h>
 
-#include "headers.h"
+#include "../Headers/headers.h"
 #include "../Actions/decide.h"
 
 #define BACKLOG 2
@@ -30,8 +30,8 @@ void *read_client_ip(struct sockaddr *sock_addr);
 
 int detail_socket(struct addrinfo *details, int size, int ai_family, int ai_socktype, int ai_flags);
 
-int process_connection(int client_fd, hashmap params);
-int create_response(char **response, char *headers, char *body, int status, char *message);
+int process_connection(int client_fd, hashmap *params);
+int create_response(char **response, hashmap *response_headers, char *body);
 int send_response(int client_fd, char *content);
 
 int create_socket(char port[5], struct addrinfo *details);

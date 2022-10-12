@@ -8,5 +8,6 @@ AC_CONFIG_FILES(
     src/FileSystem/Makefile
     src/Options/Makefile
     src/Socket/Makefile
+    src/Headers/Makefile
     src/Actions/Makefile])
 AC_OUTPUT
