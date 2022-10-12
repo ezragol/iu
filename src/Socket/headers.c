@@ -26,10 +26,27 @@ int parse_headers(char *buf, hashmap *headers, int buf_size)
             dl_locations[headers->size - 1] = i;
     }
 
-    last = nl_locations[0];
-    headers->items = calloc(headers->size, sizeof(hash));
+    last = nl_locations[2];
+    headers->items = calloc(headers->size + 2, sizeof(hash));
+    int path_start = 0, path_length;
 
-    for (int i = 0; i < headers->size; i++)
+    for (int i = 0; i < last; i++)
+    {
+        if (buf[i] == ' ' && !path_start)
+            path_start = i;
+        else if (buf[i] == ' ')
+            path_length = i - path_start;
+    }
+
+    hash *method_ptr = &headers->items[0];
+    hash *path_ptr = &headers->items[1];
+
+    method_ptr->key = strdup("method");
+    path_ptr->key = strdup("path");
+    method_ptr->value = strndup(buf, path_start);
+    path_ptr->value = strndup(buf + path_start + 1, path_length - 1);
+
+    for (int i = 2; i < headers->size; i++)
     {
         int valuel, keylen = dl_locations[i] - nl_locations[i];
         hash *h_ptr = &headers->items[i];

@@ -1,8 +1,7 @@
 noinst_LIBRARIES = libActions.a
 
 libActions_a_SOURCES = \
+    decide.c \
+    decide.h \
     upload.c \
-    upload.h \
-    hashmap.c \
-    hashmap.h
-libActions_a_CFLAGS = -I$(srcdir)/Socket
+    upload.h 

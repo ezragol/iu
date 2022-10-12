@@ -1,9 +1,8 @@
 #ifndef __ACTIONS__UPLOAD_H_
 #define __ACTIONS__UPLOAD_H_
 
-#include "../Socket/connection.h"
-#include "../Socket/headers.h"
+#include "../hashmap.h"
 
-int upload_file(hashmap headers, char **response_body, hashmap params);
+char *upload_file(hashmap headers, hashmap params);
 
 #endif

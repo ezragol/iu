@@ -8,7 +8,7 @@
 #include <time.h>
 #include <stdbool.h>
 
-#include "../Actions/hashmap.h"
+#include "../hashmap.h"
 
 #define MAX_HEADER_SIZE 128
 #define LARGE_HEADER_SIZE 1024

@@ -5,3 +5,5 @@ libSocket_a_SOURCES = \
     connection.h \
     headers.c \
     headers.h
+
+libActions_a_CFLAGS = -I$(srcdir)/Actions

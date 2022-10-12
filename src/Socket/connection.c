@@ -129,9 +129,9 @@ int establish_connection(int sockfd, struct sockaddr_storage client_addr, int si
     return new_fd;
 }
 
-int process_connection(int client_fd, int (*action)(hashmap, char **, hashmap), hashmap params)
+int process_connection(int client_fd, hashmap params)
 {
-    hashmap request_headers = {.size = 0};
+    hashmap request_headers = {.size = 2};
     hash *client_body;
 
     char content_length_str[MAX_HEADER_SIZE] = {0}, h_buf[MAX_UPLOAD] = {0},
@@ -153,7 +153,12 @@ int process_connection(int client_fd, int (*action)(hashmap, char **, hashmap), 
                 return -1;
             }
 
-            printf("  >> client sent request headers to server (%d bytes) << \n", header_length);
+            hash *method = get_item("method", request_headers);
+            hash *path = get_item("path", request_headers);
+
+            add_item("client_method", method->value, &params);
+            add_item("client_path", path->value, &params);
+            printf("  >> %s %s (%dB) << \n", method->value, path->value, header_length);
 
             if (read_item("Content-Length", content_length_str, request_headers))
             {
@@ -177,8 +182,7 @@ int process_connection(int client_fd, int (*action)(hashmap, char **, hashmap), 
         printf("   >> total bytes recieved: %dB %s<< \n", recieved, finished ? "(final) " : "");
     }
 
-    if ((callback_status = action(request_headers, &response_body, params)) == -1)
-        return -1;
+    response_body = decide_outcome(request_headers, params);
 
     create_response(&response, response_headers, response_body, 200, "OK");
     if ((response_status = send_response(client_fd, response)) == -1)

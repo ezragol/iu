@@ -1,9 +1,10 @@
-#ifndef __ACTIONS_PARAMS_H_
-#define __ACTIONS_PARAMS_H_
+#ifndef __PARAMS_H_
+#define __PARAMS_H_
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 typedef struct s_hash {
     char *key;

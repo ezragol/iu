@@ -47,7 +47,7 @@ int main(int argc, char **argv)
             hashmap params = {.size = 0};
             add_item("upload_path", upload_path, &params);
 
-            int status = process_connection(new_fd, &upload_file, params);
+            int status = process_connection(new_fd, params);
             printf(" >> closing connection with %s <<\n\n", client_ip);
             close(new_fd);
 
