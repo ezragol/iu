@@ -186,8 +186,11 @@ int create_response(char **response, hashmap *response_headers, char *body)
     char b_len_str[length];
     snprintf(b_len_str, length, "%d", b_len);
 
-    add_item("Server", "localhost", response_headers);
+    add_item("Server", "IU", response_headers);
     add_item("Content-Length", b_len_str, response_headers);
+    add_item("Content-Encoding", "gzip", response_headers);
+    add_item("Connection", "keep-alive", response_headers);
+
     time_header(response_headers);
 
     int h_len = calc_hashmap_size(response_headers, 1), m_len = strlen(status);
